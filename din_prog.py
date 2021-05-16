@@ -14,18 +14,18 @@ def getTextDirection(axis='x', direct='+'):
         return {'+': 'вверх', '-': 'вниз'}[direct]
 
 def getTextStartPos(movex='+', movey='+'):
-    '''по тому, как движется, возвращает по-русски, где начально находился исполнитель'''
-    if movey == '+':
-        return 'нижний ' + {'+': 'левый', '-': 'правый'}[movex]
-    if movey == '-':
-        return 'верхний ' + {'+': 'левый', '-': 'правый'}[movex]
+    '''по тому, как движется, возвращает по-русски в РП, где начально находился исполнитель'''
+    if movex == '+':
+        return 'левой ' + {'+': 'нижней', '-': 'верхней'}[movey]
+    if movex == '-':
+        return 'правой ' + {'+': 'нижней', '-': 'верхней'}[movey]
 
 def getTextEndPos(movex='+', movey='+'):
-    '''по тому, как движется, возвращает по-русски, где в итоге окажется исполнитель'''
-    if movey == '+':
-        return 'верхний ' + {'+': 'правый', '-': 'левый'}[movex]
-    if movey == '-':
-        return 'нижний ' + {'+': 'правый', '-': 'левый'}[movex]
+    '''по тому, как движется, возвращает по-русски в ВП, где в итоге окажется исполнитель'''
+    if movex == '+':
+        return 'правую ' + {'+': 'верхнюю', '-': 'нижнюю'}[movey]
+    if movex == '-':
+        return 'левую ' + {'+': 'верхнюю', '-': 'нижнюю'}[movey]
 
 
 class MW(QMainWindow):
@@ -34,7 +34,7 @@ class MW(QMainWindow):
         self.setFixedSize(800, 800)
         self.setWindowTitle('Ячейки тоже плотют нологи')
         self.dist = self.height() // 80 # основное расстояние между виджетами в px
-        self.possibleModsarr = ['ЧИСЛОВАЯ СТРОКА', 'ПРОСТО РОБОТ', 'РОБОТ С ПЕРЕГОРОДКАМИ', 'ЛАДЬЯ', 'ЧЕЛЯБИНСКИЙ САМОКАТИК', 'РАНДОМ']  # кнопки для выбора режима
+        self.possibleModsarr = ['ЧИСЛОВАЯ СТРОКА', 'ПРОСТО РОБОТ', 'РОБОТ С ПЕРЕГОРОДКАМИ', 'ЛАДЬЯ', 'КОНЬ', 'РАНДОМ']  # кнопки для выбора режима
         self.currMod = 0  # номер режима, соответсвующий self.possibleModsarr
         self.answer = 0  # ответ на вопрос
         
@@ -145,7 +145,7 @@ class MW(QMainWindow):
         taskText = ''  # текст условия для показа
         try:
             if self.currMod == 0:  # числовая строка
-                taskText = taskText + 'Имеется последовательность натуральных чисел, записанная в виде строки таблицы в файле info18.xls. '
+                taskText = taskText + 'Дана последовательность натуральных чисел, записанная в виде строки таблицы в файле info18.xls. '
                 line = [randint(1, 100) for _i in range(randint(20, 40))]  # рассматриваемая строка
                 # запись в info18.xls
                 wb = xlwt.Workbook()
@@ -156,9 +156,9 @@ class MW(QMainWindow):
                 task = choice(['dist+>', 'dist+<', 'next>', 'next<'])  # что ищем
                 if task[0] == 'n':  # если ищем длинейшую цепочку
                     if task[-1] == '<':
-                        taskText = taskText + 'Укажите наибольшую длину последовательности из идущих подряд чисел, где каждое последущее меньше предыдущего.'
+                        taskText = taskText + 'Из неё необходимо выбрать идущие подряд числа так, чтобы каждое следующее число было меньше предыдущего. Укажите наибольшее количество чисел, идущих друг за ругом таким образом. '
                     elif task[-1] == '>':
-                        taskText = taskText + 'Укажите наибольшую длину последовательности из идущих подряд чисел, где каждое последущее больше предыдущего.'
+                        taskText = taskText + 'Из неё необходимо выбрать идущие подряд числа так, чтобы каждое следующее число было больше предыдущего. Укажите наибольшее количество чисел, идущих друг за ругом таким образом. '
                     maxque = 1  # максимальная последовательность
                     currque = 1  # текущая последовательность
                     for i in range(1, len(line)):
@@ -187,28 +187,61 @@ class MW(QMainWindow):
                                 pairnum += 1
                     self.answer = pairnum
             
-            if self.currMod == 1:  # просто робот
-                taskText = taskText + 'Исполнитель робот перемещается по прямоугольному полю, состоящему из ячеек, в которых находятся монеты номиналом от 1 до 100. '
-                n = randint(10, 30)  # ширина
-                m = randint(10, 30)  # высота
+            else:  # просто робот, робот со стенками, ладья или конь
+                taskText = taskText + 'Прямоугольник разлинован на MxN клеток (1 < M <= 20, 1 < N <= 20). '
+                n = randint(10, 20)  # ширина
+                m = randint(10, 20)  # высота
+                # стенки
+                if self.currMod == 2:
+                    horwall = [randint(1, n - 2)]  # протяжение горизонтальной стенки
+                    horwall.append(randint(horwall[0], n - 2))
+                    horwallpos = randint(1, m - 2)  # строка с горизонтальной стенкой
+                    verwall = [randint(1, m - 2)]  # протяжение вертикальной стенки
+                    verwall.append(randint(verwall[0], m - 2))
+                    verwallpos = randint(1, n - 2)  # столбец с вертикальной стенкой
+                    # тут надо бы пояснить немного моей логики. Я расцениваю стенку как ограничение множества ячеек, из которых можно попасть в текущую
                 field = [[randint(1, 100) for _i in range(n)] for _j in range(m)]  # поле для робота
+                movements = [choice(['+', '-']), choice(['+', '-'])]  # возвожные движения робота; "+" -- вверх/вправо, "-" -- вниз/влево
+                movements.append(movements[0] + movements[1])  # диагональ
                 # запись в info18.xls
                 wb = xlwt.Workbook()
                 ws = wb.add_sheet('18')
                 for i in range(m):
                     for j in range(n):
-                        ws.write(i, j, field[i][j])
+                        borders = xlwt.Borders()  # граница
+                        style = xlwt.XFStyle()  # стиль
+                        font = xlwt.Font()
+                        font.name = 'Arial'
+                        style.font = font
+                        if self.currMod == 2 or self.currMod == 3:
+                            if i >= verwall[0] and i <= verwall[1] and j == verwallpos:
+                                if movements[0] == '+':
+                                    borders.left = xlwt.Borders.THICK
+                                if movements[0] == '-':
+                                    borders.right = xlwt.Borders.THICK
+                            if j >= horwall[0] and j <= horwall[1] and i == horwallpos:
+                                if movements[0] == '+':
+                                    borders.bottom = xlwt.Borders.THICK
+                                if movements[0] == '-':
+                                    borders.top = xlwt.Borders.THICK
+                        if i == m - 1:
+                            borders.bottom = xlwt.Borders.THICK
+                        if j == n - 1:
+                            borders.right = xlwt.Borders.THICK
+                        style.borders = borders
+                        ws.write(i, j, field[i][j], style)
                 wb.save('info18.xls')
-                taskText = taskText + 'Ячейки этого поля записаны в таблицу info18.xls. '
-                movements = [choice(['+', '-']), choice(['+', '-'])]  # возвожные движения робота; "+" -- вверх/вправо, "-" -- вниз/влево
-                movements.append(movements[0] + movements[1])  # диагональ
-                taskText = taskText + 'Начальная позиция робота: ' + getTextStartPos(movements[0], movements[1]) + ' угол. '
-                taskText = taskText + f'Робот может перемещаться в следующих направлениях: {getTextDirection("x", movements[0])}, {getTextDirection("y", movements[1])} и по диагонали {getTextDirection("y", movements[1])}-{getTextDirection("x", movements[0])}. '
-                taskText = taskText + 'Робот не может выходить за пределы поля. '
-                taskText = taskText + 'Оказавшись на любой ячейке (включая начальную и конечную), робот собирает все находящиеся в ней монеты. '
+                taskText = taskText + f'Исполнитель Робот может перемещаться по клеткам, выполняя за одно перемещение одну из трёх команд: {getTextDirection("x", movements[0])}, {getTextDirection("y", movements[1])} или {getTextDirection("y", movements[1])}-{getTextDirection("x", movements[0])}. '
+                taskText = taskText + f'По команде {getTextDirection("x", movements[0])} Робот перемещается в соседнюю {getTextDirection("x", movements[0])[1:-1]}ую клетку, по команде {getTextDirection("y", movements[1])} -- в соседнюю ' + {'+': 'верхнюю', '-': 'нижнюю'}[movements[1]] + ', а по команде ' + f'{getTextDirection("y", movements[1])}-{getTextDirection("x", movements[0])}' + ' -- в соседнюю клетку, расположенную по диагонали ' + {'+': 'справа', '-': 'слева'}[movements[0]] + ' и ' + {'+': 'сверху', '-': 'снизу'}[movements[1]] + '. '
+                if self.currMod == 1:
+                    taskText = taskText + 'При попытке выхода за границу прямоугольника Робот разрушается. '
+                if self.currMod == 2:
+                    taskText = taskText + 'При попытке выхода за границу прямоугольника или пересечения внутренней стены (обзначена как утолщённая граница между ячейками) Робот разрушается. '
+                taskText = taskText + 'Перед каждым запуском Робота в каждой клетке квадрата лежит монета достоинством от 1 до 100. Посетив клетку, Робот забирает монету с собой; это также относится к начальной и конечной клетке маршрута Робота. '
                 startcell = {'++': (0, m - 1), '+-': (0, 0), '-+': (n - 1, m - 1), '--': (n - 1, 0)}[movements[-1]]  # начальная позиция робота
                 task = choice(['min', 'max'])  # что надо найти
-                taskText = taskText + 'Укажите ' + {'min': 'минимальную', 'max': 'максимальную'}[task] + ' сумму, которую робот соберёт, достигнув ' + getTextEndPos(movements[0], movements[1]) + ' угол. '
+                taskText = taskText + '\n\nУкажите ' + {'min': 'минимальную', 'max': 'максимальную'}[task] + ' денежную сумму, которую может собрать Робот, пройдя из ' + getTextStartPos(movements[0], movements[1]) + ' клетки в ' + getTextEndPos(movements[0], movements[1]) + '. '
+                taskText = taskText + '\n\nИсходные данные представляют собой электронную таблицу info18.xls размером M×N, каждая ячейка которой соответствует клетке прямоугольника. '
                 helpfield = [[0 for _i in range(n)] for _k in range(m)]  # вспомогательное поле
                 helpfield[startcell[1]][startcell[0]] = field[startcell[1]][startcell[0]]
                 # заполнение строки, в которой находится стартовая позиция
@@ -232,18 +265,29 @@ class MW(QMainWindow):
                 changey = {'+': -1, '-': 1}[movements[1]]  # как ходят по ординате
                 for rownum in rangey:
                     for colomnnum in rangex:
-                        if task == 'min':
-                            helpfield[rownum][colomnnum] = field[rownum][colomnnum] + min([helpfield[rownum - changey][colomnnum],
-                                                                                           helpfield[rownum][colomnnum - changex],
-                                                                                           helpfield[rownum - changey][colomnnum - changex]])
-                        if task == 'max':
-                            helpfield[rownum][colomnnum] = field[rownum][colomnnum] + max([helpfield[rownum - changey][colomnnum],
-                                                                                           helpfield[rownum][colomnnum - changex],
-                                                                                           helpfield[rownum - changey][colomnnum - changex]])
+                        if self.currMod == 1:
+                            lastmoney = [helpfield[rownum - changey][colomnnum],
+                                         helpfield[rownum][colomnnum - changex],
+                                         helpfield[rownum - changey][colomnnum - changex]]  # денежные суммы, которые могут быть к моменту прихода в эту ячейку
+                        elif self.currMod == 2:
+                            lastmoney = []
+                            if not (rownum == horwallpos and colomnnum in horwall) and helpfield[rownum - changey][colomnnum] != 0:  # если не прошёл через горизонтальную стенку
+                                lastmoney.append(helpfield[rownum - changey][colomnnum])
+                            if not (rownum == verwallpos and colomnnum in verwall) and helpfield[rownum][colomnnum - changex] != 0:  # если не прошёл через вертикальную стенку
+                                lastmoney.append(helpfield[rownum][colomnnum - changex])
+                            if (colomnnum != verwallpos and rownum not in verwall and rownum - changey not in verwall or\
+                               rownum != horwallpos and colomnnum not in horwall and colomnnum - changey not in horwall)\
+                               and helpfield[rownum - changey][colomnnum - changex] != 0:  # если можно пройти по диагонали
+                                lastmoney.append(helpfield[rownum - changey][colomnnum - changex])
+                        if not lastmoney:  # если в ячейку неоткуда прийти
+                            continue
+                        elif task == 'min':
+                            helpfield[rownum][colomnnum] = field[rownum][colomnnum] + min(lastmoney)
+                        elif task == 'max':
+                            helpfield[rownum][colomnnum] = field[rownum][colomnnum] + max(lastmoney)
                 endcell = {'++': (n - 1, 0), '+-': (n - 1, m - 1), '-+': (0, 0), '--': (0, m - 1)}[movements[-1]]  # конечная позиция робота
-                for row in helpfield:
-                    print(row)
                 self.answer = helpfield[endcell[1]][endcell[0]]
+                
         except:
             taskText = 'Закройте таблицу info18.xls и обновите.'
         self.tasktext.setText(taskText)  # записываем условие в браузер
@@ -256,7 +300,7 @@ class MW(QMainWindow):
             else:
                 self.checklab.setText(f'<p style="color: rgb(250, 100, 100);">{self.answer}!</p>')
         except:
-            self.checklab.setText('повторите ввод')
+            self.checklab.setText('<p style="color: rgb(250, 100, 100);">ERROR!</p>')
                 
         
         
