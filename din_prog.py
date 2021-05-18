@@ -34,7 +34,7 @@ class MW(QMainWindow):
         self.setFixedSize(800, 800)
         self.setWindowTitle('Ячейки тоже плотют нологи')
         self.dist = self.height() // 80 # основное расстояние между виджетами в px
-        self.possibleModsarr = ['ЧИСЛОВАЯ СТРОКА', 'ПРОСТО РОБОТ', 'РОБОТ С ПЕРЕГОРОДКАМИ', 'ЛАДЬЯ', 'КОНЬ', 'РАНДОМ']  # кнопки для выбора режима
+        self.possibleModsarr = ['РАНДОМ', 'ПРОСТО РОБОТ', 'РОБОТ С ПЕРЕГОРОДКАМИ', 'ЛАДЬЯ']  # кнопки для выбора режима
         self.currMod = 0  # номер режима, соответсвующий self.possibleModsarr
         self.answer = 0  # ответ на вопрос
         
@@ -57,11 +57,9 @@ class MW(QMainWindow):
             self.chooseModbuttons[-1].setFont(QFont('Arial', 12))
             self.chooseModbuttons[-1].clicked.connect(self.chooseMode)
             self.chooseModbuttons[-1].setText(mod)
-        self.chooseModbuttons[0].setStyleSheet('background-color: rgb(150, 250, 150)')
         self.chooseModbuttons[1].setStyleSheet('background-color: rgb(150, 250, 150)')
-        self.chooseModbuttons[2].setStyleSheet('background-color: rgb(50, 200, 50)')
-        self.chooseModbuttons[3].setStyleSheet('background-color: rgb(250, 250, 50)')
-        self.chooseModbuttons[4].setStyleSheet('background-color: rgb(250, 50, 50)')
+        self.chooseModbuttons[2].setStyleSheet('background-color: rgb(250, 250, 50)')
+        self.chooseModbuttons[3].setStyleSheet('background-color: rgb(250, 50, 50)')
         
         # экран обучения
         #
@@ -116,10 +114,10 @@ class MW(QMainWindow):
             
     def chooseMode(self):
         '''выбор режима'''
-        if self.sender() == self.chooseModbuttons[-1]:
-            self.currMod = randint(0, len(self.chooseModbuttons) - 2)
+        if self.sender() == self.chooseModbuttons[0]:
+            self.currMod = randint(1, len(self.chooseModbuttons) - 1)
         else:
-            for i in range(len(self.chooseModbuttons) - 1):
+            for i in range(1, len(self.chooseModbuttons)):
                 if self.chooseModbuttons[i] == self.sender():
                     self.currMod = i
                     break
@@ -143,6 +141,8 @@ class MW(QMainWindow):
     def refresh(self):
         '''обновляет задание текущего режима'''
         taskText = ''  # текст условия для показа
+        self.ansedit.setText('')
+        self.checklab.setText('')
         try:
             if self.currMod == 0:  # числовая строка
                 taskText = taskText + 'Дана последовательность натуральных чисел, записанная в виде строки таблицы в файле info18.xls. '
@@ -187,8 +187,8 @@ class MW(QMainWindow):
                                 pairnum += 1
                     self.answer = pairnum
             
-            else:  # просто робот, робот со стенками, ладья или конь
-                taskText = taskText + 'Прямоугольник разлинован на MxN клеток (1 < M <= 20, 1 < N <= 20). '
+            else:  # просто робот, робот со стенками, ладья (или конь?)
+                taskText = taskText + 'Прямоугольник разлинован на M x N клеток (1 < M <= 20, 1 < N <= 20). '
                 n = randint(10, 20)  # ширина
                 m = randint(10, 20)  # высота
                 # стенки
@@ -202,7 +202,8 @@ class MW(QMainWindow):
                     # тут надо бы пояснить немного моей логики. Я расцениваю стенку как ограничение множества ячеек, из которых можно попасть в текущую
                 field = [[randint(1, 100) for _i in range(n)] for _j in range(m)]  # поле для робота
                 movements = [choice(['+', '-']), choice(['+', '-'])]  # возвожные движения робота; "+" -- вверх/вправо, "-" -- вниз/влево
-                movements.append(movements[0] + movements[1])  # диагональ
+                if self.currMod == 1 or self.currMod == 2:
+                    movements.append(movements[0] + movements[1])  # диагональ
                 # запись в info18.xls
                 wb = xlwt.Workbook()
                 ws = wb.add_sheet('18')
@@ -213,7 +214,7 @@ class MW(QMainWindow):
                         font = xlwt.Font()
                         font.name = 'Arial'
                         style.font = font
-                        if self.currMod == 2 or self.currMod == 3:
+                        if self.currMod == 2:
                             if i >= verwall[0] and i <= verwall[1] and j == verwallpos:
                                 if movements[0] == '+':
                                     borders.left = xlwt.Borders.THICK
@@ -224,6 +225,7 @@ class MW(QMainWindow):
                                     borders.bottom = xlwt.Borders.THICK
                                 if movements[0] == '-':
                                     borders.top = xlwt.Borders.THICK
+                        # границы вокруг поля
                         if i == m - 1:
                             borders.bottom = xlwt.Borders.THICK
                         if j == n - 1:
@@ -231,38 +233,32 @@ class MW(QMainWindow):
                         style.borders = borders
                         ws.write(i, j, field[i][j], style)
                 wb.save('info18.xls')
-                taskText = taskText + f'Исполнитель Робот может перемещаться по клеткам, выполняя за одно перемещение одну из трёх команд: {getTextDirection("x", movements[0])}, {getTextDirection("y", movements[1])} или {getTextDirection("y", movements[1])}-{getTextDirection("x", movements[0])}. '
-                taskText = taskText + f'По команде {getTextDirection("x", movements[0])} Робот перемещается в соседнюю {getTextDirection("x", movements[0])[1:-1]}ую клетку, по команде {getTextDirection("y", movements[1])} -- в соседнюю ' + {'+': 'верхнюю', '-': 'нижнюю'}[movements[1]] + ', а по команде ' + f'{getTextDirection("y", movements[1])}-{getTextDirection("x", movements[0])}' + ' -- в соседнюю клетку, расположенную по диагонали ' + {'+': 'справа', '-': 'слева'}[movements[0]] + ' и ' + {'+': 'сверху', '-': 'снизу'}[movements[1]] + '. '
-                if self.currMod == 1:
+                if self.currMod == 1 or self.currMod == 2:  # РОБОТ
+                    taskText = taskText + f'Исполнитель Робот может перемещаться по клеткам, выполняя за одно перемещение одну из трёх команд: {getTextDirection("x", movements[0])}, {getTextDirection("y", movements[1])} или {getTextDirection("y", movements[1])}-{getTextDirection("x", movements[0])}. '
+                    taskText = taskText + f'По команде {getTextDirection("x", movements[0])} Робот перемещается в соседнюю {getTextDirection("x", movements[0])[1:-1]}ую клетку, по команде {getTextDirection("y", movements[1])} -- в соседнюю ' + {'+': 'верхнюю', '-': 'нижнюю'}[movements[1]] + ', а по команде ' + f'{getTextDirection("y", movements[1])}-{getTextDirection("x", movements[0])}' + ' -- в соседнюю клетку, расположенную по диагонали ' + {'+': 'справа', '-': 'слева'}[movements[0]] + ' и ' + {'+': 'сверху', '-': 'снизу'}[movements[1]] + '. '
+                if self.currMod == 1:  # РОБОТ
                     taskText = taskText + 'При попытке выхода за границу прямоугольника Робот разрушается. '
-                if self.currMod == 2:
+                if self.currMod == 2:  # РОБОТ
                     taskText = taskText + 'При попытке выхода за границу прямоугольника или пересечения внутренней стены (обзначена как утолщённая граница между ячейками) Робот разрушается. '
-                taskText = taskText + 'Перед каждым запуском Робота в каждой клетке квадрата лежит монета достоинством от 1 до 100. Посетив клетку, Робот забирает монету с собой; это также относится к начальной и конечной клетке маршрута Робота. '
-                startcell = {'++': (0, m - 1), '+-': (0, 0), '-+': (n - 1, m - 1), '--': (n - 1, 0)}[movements[-1]]  # начальная позиция робота
+                if self.currMod == 1 or self.currMod == 2:  # РОБОТ
+                    taskText = taskText + 'Перед каждым запуском Робота в каждой клетке квадрата лежит монета достоинством от 1 до 100. Посетив клетку, Робот забирает монету с собой; это также относится к начальной и конечной клетке маршрута Робота. '
+                startcell = {'++': (0, m - 1), '+-': (0, 0), '-+': (n - 1, m - 1), '--': (n - 1, 0)}[movements[0] + movements[1]]  # начальная позиция робота
                 task = choice(['min', 'max'])  # что надо найти
                 taskText = taskText + '\n\nУкажите ' + {'min': 'минимальную', 'max': 'максимальную'}[task] + ' денежную сумму, которую может собрать Робот, пройдя из ' + getTextStartPos(movements[0], movements[1]) + ' клетки в ' + getTextEndPos(movements[0], movements[1]) + '. '
-                taskText = taskText + '\n\nИсходные данные представляют собой электронную таблицу info18.xls размером M×N, каждая ячейка которой соответствует клетке прямоугольника. '
+                taskText = taskText + '\n\nИсходные данные представляют собой электронную таблицу info18.xls размером M × N, каждая ячейка которой соответствует клетке прямоугольника. '
                 helpfield = [[0 for _i in range(n)] for _k in range(m)]  # вспомогательное поле
                 helpfield[startcell[1]][startcell[0]] = field[startcell[1]][startcell[0]]
-                # заполнение строки, в которой находится стартовая позиция
-                if movements[0] == '+':
-                    for i in range(1, n):
-                        helpfield[startcell[1]][i] = field[startcell[1]][i] + helpfield[startcell[1]][i - 1]
-                elif movements[0] == '-':
-                    for i in range(n - 2, -1, -1):
-                        helpfield[startcell[1]][i] = field[startcell[1]][i] + helpfield[startcell[1]][i + 1]
-                # заполнение столбца, в котором находится стартовая позиция
-                if movements[1] == '+':
-                    for i in range(m - 2, -1, -1):
-                        helpfield[i][startcell[0]] = field[i][startcell[0]] + helpfield[i + 1][startcell[0]]
-                if movements[1] == '-':
-                    for i in range(1, m):
-                        helpfield[i][startcell[0]] = field[i][startcell[0]] + helpfield[i - 1][startcell[0]]
-                # заполнение полей
                 rangex = {'+': range(1, n), '-': range(n - 2, -1, -1)}[movements[0]]  # в каком порядке смотреть в строках
                 rangey = {'+': range(m - 2, -1, -1), '-': range(1, m)}[movements[1]]  # в каком порядке смотреть строки
                 changex = {'+': 1, '-': -1}[movements[0]]  # как ходят по абциссе
                 changey = {'+': -1, '-': 1}[movements[1]]  # как ходят по ординате
+                # заполнение строки, в которой находится стартовая позиция
+                for i in rangex:
+                    helpfield[startcell[1]][i] = field[startcell[1]][i] + helpfield[startcell[1]][i - changex]
+                # заполнение столбца, в котором находится стартовая позиция
+                for i in rangey:
+                    helpfield[i][startcell[0]] = field[i][startcell[0]] + helpfield[i - changey][startcell[0]]
+                # заполнение полей
                 for rownum in rangey:
                     for colomnnum in rangex:
                         if self.currMod == 1:
@@ -271,14 +267,17 @@ class MW(QMainWindow):
                                          helpfield[rownum - changey][colomnnum - changex]]  # денежные суммы, которые могут быть к моменту прихода в эту ячейку
                         elif self.currMod == 2:
                             lastmoney = []
-                            if not (rownum == horwallpos and colomnnum in horwall) and helpfield[rownum - changey][colomnnum] != 0:  # если не прошёл через горизонтальную стенку
+                            if not (rownum == horwallpos and colomnnum >= horwall[0] and colomnnum <= horwall[1]) and helpfield[rownum - changey][colomnnum] != 0:  # если не прошёл через горизонтальную стенку
                                 lastmoney.append(helpfield[rownum - changey][colomnnum])
-                            if not (rownum == verwallpos and colomnnum in verwall) and helpfield[rownum][colomnnum - changex] != 0:  # если не прошёл через вертикальную стенку
+                            if not (colomnnum == verwallpos and rownum >= verwall[0] and rownum <= verwall[1]) and helpfield[rownum][colomnnum - changex] != 0:  # если не прошёл через вертикальную стенку
                                 lastmoney.append(helpfield[rownum][colomnnum - changex])
-                            if (colomnnum != verwallpos and rownum not in verwall and rownum - changey not in verwall or\
-                               rownum != horwallpos and colomnnum not in horwall and colomnnum - changey not in horwall)\
+                            if (colomnnum != verwallpos and (rownum < verwall[0] or rownum > verwall[1]) and (rownum - changey < verwall[0] or rownum - changey > verwall[1]) or\
+                               rownum != horwallpos and (colomnnum < horwall[0] or colomnnum > horwall[1]) and (colomnnum - changey < horwall[0] or colomnnum - changey > horwall[1]))\
                                and helpfield[rownum - changey][colomnnum - changex] != 0:  # если можно пройти по диагонали
                                 lastmoney.append(helpfield[rownum - changey][colomnnum - changex])
+                        elif self.currMod == 3:
+                            lastmoney = []
+                            
                         if not lastmoney:  # если в ячейку неоткуда прийти
                             continue
                         elif task == 'min':
@@ -287,9 +286,12 @@ class MW(QMainWindow):
                             helpfield[rownum][colomnnum] = field[rownum][colomnnum] + max(lastmoney)
                 endcell = {'++': (n - 1, 0), '+-': (n - 1, m - 1), '-+': (0, 0), '--': (0, m - 1)}[movements[-1]]  # конечная позиция робота
                 self.answer = helpfield[endcell[1]][endcell[0]]
+                for linenum in range(len(helpfield)):
+                    print(helpfield[linenum])
+                print('*' * 40)
                 
         except:
-            taskText = 'Закройте таблицу info18.xls и обновите.'
+            taskText = 'Ошибка при генерации. Попробуте закрыть таблицу info18.xls и обновить.'
         self.tasktext.setText(taskText)  # записываем условие в браузер
     
     def check(self):
