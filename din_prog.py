@@ -233,18 +233,28 @@ class MW(QMainWindow):
                         style.borders = borders
                         ws.write(i, j, field[i][j], style)
                 wb.save('info18.xls')
-                if self.currMod == 1 or self.currMod == 2:  # РОБОТ
+                if self.currMod == 1 or self.currMod == 2:  # РОБОТ как перемещается
                     taskText = taskText + f'Исполнитель Робот может перемещаться по клеткам, выполняя за одно перемещение одну из трёх команд: {getTextDirection("x", movements[0])}, {getTextDirection("y", movements[1])} или {getTextDirection("y", movements[1])}-{getTextDirection("x", movements[0])}. '
                     taskText = taskText + f'По команде {getTextDirection("x", movements[0])} Робот перемещается в соседнюю {getTextDirection("x", movements[0])[1:-1]}ую клетку, по команде {getTextDirection("y", movements[1])} -- в соседнюю ' + {'+': 'верхнюю', '-': 'нижнюю'}[movements[1]] + ', а по команде ' + f'{getTextDirection("y", movements[1])}-{getTextDirection("x", movements[0])}' + ' -- в соседнюю клетку, расположенную по диагонали ' + {'+': 'справа', '-': 'слева'}[movements[0]] + ' и ' + {'+': 'сверху', '-': 'снизу'}[movements[1]] + '. '
-                if self.currMod == 1:  # РОБОТ
+                if self.currMod == 3: #  ЛАДЬЯ как перемещается
+                    taskText = taskText + f'Исполнитель Ладья может перемещаться по клеткам, выполняя за одно перемещение одну из двух команд: {getTextDirection("x", movements[0])} или {getTextDirection("y", movements[1])}. '
+                    taskText = taskText + f'По команде {getTextDirection("x", movements[0])} Ладья перемещается на любое количество клеток {getTextDirection("x", movements[0])}, по команде {getTextDirection("y", movements[1])} -- на любое количество клеток {getTextDirection("y", movements[1])}. '
+                if self.currMod == 1:  # РОБОТ без стенок когда рушится
                     taskText = taskText + 'При попытке выхода за границу прямоугольника Робот разрушается. '
-                if self.currMod == 2:  # РОБОТ
+                if self.currMod == 2:  # РОБОТ со стенками когда рушится
                     taskText = taskText + 'При попытке выхода за границу прямоугольника или пересечения внутренней стены (обзначена как утолщённая граница между ячейками) Робот разрушается. '
-                if self.currMod == 1 or self.currMod == 2:  # РОБОТ
+                if self.currMod == 3:  # ЛАДЬЯ когда рушится
+                    taskText = taskText + 'При попытке выхода за границу прямоугольника Ладья разрушается. '
+                if self.currMod == 1 or self.currMod == 2:  # РОБОТ про деньги в ячейках
                     taskText = taskText + 'Перед каждым запуском Робота в каждой клетке квадрата лежит монета достоинством от 1 до 100. Посетив клетку, Робот забирает монету с собой; это также относится к начальной и конечной клетке маршрута Робота. '
+                if self.currMod == 3:  # ЛАДЬЯ про деньги в ячейках
+                    taskText = taskText + 'Перед каждым запуском Ладьи в каждой клетке квадрата лежит монета достоинством от 1 до 100. Посетив клетку, Ладья забирает монету с собой; это также относится к начальной и конечной клетке маршрута Ладьи. '
                 startcell = {'++': (0, m - 1), '+-': (0, 0), '-+': (n - 1, m - 1), '--': (n - 1, 0)}[movements[0] + movements[1]]  # начальная позиция робота
                 task = choice(['min', 'max'])  # что надо найти
-                taskText = taskText + '\n\nУкажите ' + {'min': 'минимальную', 'max': 'максимальную'}[task] + ' денежную сумму, которую может собрать Робот, пройдя из ' + getTextStartPos(movements[0], movements[1]) + ' клетки в ' + getTextEndPos(movements[0], movements[1]) + '. '
+                if self.currMod == 1 or self.currMod == 2:  # РОБОТ вопрос
+                    taskText = taskText + '\n\nУкажите ' + {'min': 'минимальную', 'max': 'максимальную'}[task] + ' денежную сумму, которую может собрать Робот, пройдя из ' + getTextStartPos(movements[0], movements[1]) + ' клетки в ' + getTextEndPos(movements[0], movements[1]) + '. '
+                if self.currMod == 3:  # РОБОТ вопрос
+                    taskText = taskText + '\n\nУкажите ' + {'min': 'минимальную', 'max': 'максимальную'}[task] + ' денежную сумму, которую может собрать Ладья, пройдя из ' + getTextStartPos(movements[0], movements[1]) + ' клетки в ' + getTextEndPos(movements[0], movements[1]) + '. '
                 taskText = taskText + '\n\nИсходные данные представляют собой электронную таблицу info18.xls размером M × N, каждая ячейка которой соответствует клетке прямоугольника. '
                 helpfield = [[0 for _i in range(n)] for _k in range(m)]  # вспомогательное поле
                 helpfield[startcell[1]][startcell[0]] = field[startcell[1]][startcell[0]]
@@ -254,10 +264,27 @@ class MW(QMainWindow):
                 changey = {'+': -1, '-': 1}[movements[1]]  # как ходят по ординате
                 # заполнение строки, в которой находится стартовая позиция
                 for i in rangex:
-                    helpfield[startcell[1]][i] = field[startcell[1]][i] + helpfield[startcell[1]][i - changex]
+                    if self.currMod == 1 or self.currMod == 2:
+                        helpfield[startcell[1]][i] = field[startcell[1]][i] + helpfield[startcell[1]][i - changex]
+                    if self.currMod == 3:
+                        currrangex = {'+': range(i - 1, -1, -1), '-': range(i + 1, n)}[movements[0]]  # для просмотра уже заполненных ячеек
+                        lastmoney = [helpfield[startcell[1]][j] for j in currrangex]
+                        if task == 'min':
+                            helpfield[startcell[1]][i] = field[startcell[1]][i] + min(lastmoney)
+                        if task == 'max':
+                            helpfield[startcell[1]][i] = field[startcell[1]][i] + max(lastmoney)
+                        
                 # заполнение столбца, в котором находится стартовая позиция
                 for i in rangey:
-                    helpfield[i][startcell[0]] = field[i][startcell[0]] + helpfield[i - changey][startcell[0]]
+                    if self.currMod == 1 or self.currMod == 2:
+                        helpfield[i][startcell[0]] = field[i][startcell[0]] + helpfield[i - changey][startcell[0]]
+                    if self.currMod == 3:
+                        currrangey = {'-': range(i - 1, -1, -1), '+': range(i + 1, m)}[movements[1]]  # для просмотра уже заполненных ячеек
+                        lastmoney = [helpfield[j][startcell[0]] for j in currrangey]
+                        if task == 'min':
+                            helpfield[i][startcell[0]] = field[i][startcell[0]] + min(lastmoney)
+                        if task == 'max':
+                            helpfield[i][startcell[0]] = field[i][startcell[0]] + max(lastmoney)
                 # заполнение полей
                 for rownum in rangey:
                     for colomnnum in rangex:
@@ -276,7 +303,10 @@ class MW(QMainWindow):
                                and helpfield[rownum - changey][colomnnum - changex] != 0:  # если можно пройти по диагонали
                                 lastmoney.append(helpfield[rownum - changey][colomnnum - changex])
                         elif self.currMod == 3:
-                            lastmoney = []
+                            currrangex = {'+': range(colomnnum - 1, -1, -1), '-': range(colomnnum + 1, n)}[movements[0]]  # для просмотра уже заполненных ячеек
+                            currrangey = {'-': range(rownum - 1, -1, -1), '+': range(rownum + 1, m)}[movements[1]]  # для просмотра уже заполненных ячеек
+                            lastmoney = [helpfield[rownum][i] for i in currrangex] + [helpfield[i][colomnnum] for i in currrangey]
+                            
                             
                         if not lastmoney:  # если в ячейку неоткуда прийти
                             continue
@@ -284,11 +314,12 @@ class MW(QMainWindow):
                             helpfield[rownum][colomnnum] = field[rownum][colomnnum] + min(lastmoney)
                         elif task == 'max':
                             helpfield[rownum][colomnnum] = field[rownum][colomnnum] + max(lastmoney)
-                endcell = {'++': (n - 1, 0), '+-': (n - 1, m - 1), '-+': (0, 0), '--': (0, m - 1)}[movements[-1]]  # конечная позиция робота
+                endcell = {'++': (n - 1, 0), '+-': (n - 1, m - 1), '-+': (0, 0), '--': (0, m - 1)}[movements[0] + movements[1]]  # конечная позиция робота
                 self.answer = helpfield[endcell[1]][endcell[0]]
-                for linenum in range(len(helpfield)):
-                    print(helpfield[linenum])
-                print('*' * 40)
+                # для проверки
+               # for linenum in range(len(helpfield)):
+                #    print(helpfield[linenum])
+                #print('*' * 40)
                 
         except:
             taskText = 'Ошибка при генерации. Попробуте закрыть таблицу info18.xls и обновить.'
